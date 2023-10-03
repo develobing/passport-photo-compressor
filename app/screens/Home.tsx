@@ -1,4 +1,4 @@
-import React, {FC} from 'react';
+import React, {FC, useState} from 'react';
 import {StyleSheet, Text, View} from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome5';
 import LargeIconButton from '../components/LargeIconButton';
@@ -8,12 +8,17 @@ import {
 } from '../utils/imageSelector';
 import {NavigationProp} from '@react-navigation/native';
 import {RootStackParamList} from '../navigation/AppNavigator';
+import {checkCameraPermission} from '../utils/helper';
+import PermissionWarning from '../components/PermissionWarning';
 
 interface Props {
   navigation: NavigationProp<RootStackParamList>;
 }
 
 const Home: FC<Props> = ({navigation}): JSX.Element => {
+  const [showPermissionInfoAlert, setShowPermissionInfoAlert] =
+    useState<boolean>(false);
+
   const navigateToImageEditor = (uri: string): void => {
     navigation.navigate('ImageEditor', {imageUri: uri});
   };
@@ -22,10 +27,15 @@ const Home: FC<Props> = ({navigation}): JSX.Element => {
     const {path, error} = await selectAndCropImageFromCamera();
 
     if (error) {
-      return console.log('error', error);
+      const isGranted = await checkCameraPermission();
+      if (!isGranted) {
+        return setShowPermissionInfoAlert(true);
+      }
     }
 
-    navigateToImageEditor(path);
+    if (path) {
+      navigateToImageEditor(path);
+    }
   };
 
   const handleImageSelection = async (): Promise<void> => {
@@ -35,7 +45,9 @@ const Home: FC<Props> = ({navigation}): JSX.Element => {
       return console.log('error', error);
     }
 
-    navigateToImageEditor(path);
+    if (path) {
+      navigateToImageEditor(path);
+    }
   };
 
   return (
@@ -58,6 +70,13 @@ const Home: FC<Props> = ({navigation}): JSX.Element => {
       <LargeIconButton title="Capture" onPress={handleImageSelection}>
         <Icon name="folder-open" />
       </LargeIconButton>
+
+      <PermissionWarning
+        visible={showPermissionInfoAlert}
+        title="Required Camera Permission"
+        message="This app is heavily based on camera, so you need to grant camera permission to use this app."
+        onClose={() => setShowPermissionInfoAlert(false)}
+      />
     </View>
   );
 };

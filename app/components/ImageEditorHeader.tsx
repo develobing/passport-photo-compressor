@@ -4,9 +4,11 @@ import UtilityButtons from './UtilityButtons';
 import {NavigationProp, useNavigation} from '@react-navigation/native';
 import {RootStackParamList} from '../navigation/AppNavigator';
 
-interface Props {}
+interface Props {
+  onSavePress?: () => void;
+}
 
-const ImageEditorHeader: FC<Props> = (): JSX.Element => {
+const ImageEditorHeader: FC<Props> = ({onSavePress}): JSX.Element => {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
 
   return (
@@ -16,7 +18,7 @@ const ImageEditorHeader: FC<Props> = (): JSX.Element => {
       {/* <UtilityButtons.Back onPress={navigation.goBack} /> */}
 
       {/* Save button */}
-      <UtilityButtons.Save />
+      <UtilityButtons.Save onPress={onSavePress} />
     </View>
   );
 };

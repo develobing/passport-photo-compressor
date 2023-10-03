@@ -15,18 +15,18 @@ export const requestCameraPermission = async (): Promise<void> => {
       },
     );
 
-    const {NEVER_ASK_AGAIN, DENIDED} = PermissionsAndroid.RESULTS;
-    if (granted === NEVER_ASK_AGAIN) {
-      return Alert.alert(
-        'Failed to open camera',
-        "It looks like you have denied the camera permission. You can't capture the image without camera permission.",
-      );
-    } else if (granted === DENIDED) {
-      return Alert.alert(
-        'Failed to open camera',
-        "It looks like you have denied the camera permission. You can't capture the image without camera permission.",
-      );
-    }
+    // const {NEVER_ASK_AGAIN, DENIDED} = PermissionsAndroid.RESULTS;
+    // if (granted === NEVER_ASK_AGAIN) {
+    //   return Alert.alert(
+    //     'Failed to open camera',
+    //     "It looks like you have denied the camera permission. You can't capture the image without camera permission.",
+    //   );
+    // } else if (granted === DENIDED) {
+    //   return Alert.alert(
+    //     'Failed to open camera',
+    //     "It looks like you have denied the camera permission. You can't capture the image without camera permission.",
+    //   );
+    // }
   } catch (error) {
     console.log('requestCameraPermission() - error', error);
   }
@@ -47,7 +47,6 @@ export const selectAndCropImageFromCamera = async (
       cropping: true,
     });
     const {path} = imageInfo;
-    console.log('imageInfo', imageInfo);
 
     return {path, error: null};
   } catch (error) {
@@ -61,15 +60,12 @@ export const selectAndCropImageFromDevice = async (
   height: number = 531,
 ): Promise<ImageResultType> => {
   try {
-    await requestCameraPermission();
-
     const imageInfo = await ImageCropPicker.openPicker({
       width,
       height,
       cropping: true,
     });
     const {path} = imageInfo;
-    console.log('imageInfo', imageInfo);
 
     return {path, error: null};
   } catch (error) {

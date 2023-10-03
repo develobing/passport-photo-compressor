@@ -1,14 +1,19 @@
-import React, {FC} from 'react';
+import React, {FC, ReactNode} from 'react';
 import {View, StyleSheet, Image} from 'react-native';
 
 interface Props {
   uri: string;
+  children?: ReactNode;
 }
 
-const SelectedImage: FC<Props> = ({uri}): JSX.Element => {
+const SelectedImage: FC<Props> = ({uri, children}): JSX.Element | null => {
+  if (!uri) {
+    return null;
+  }
+
   return (
     <View style={styles.container}>
-      <Image source={{uri}} style={styles.image} />
+      {children || <Image source={{uri}} style={styles.image} />}
     </View>
   );
 };
@@ -20,6 +25,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     elevation: 15,
     padding: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 
   image: {

@@ -12,6 +12,11 @@ import {
 } from '../utils/imageSelector';
 import ConfirmModal from '../components/ConfirmModal';
 import {NavigationProp, useNavigation} from '@react-navigation/native';
+import fsModule from '../modules/fsModule';
+import {convertSizeInKb, takeReadAndWritePermissions} from '../utils/helper';
+import BusyLoading from '../components/BusyLoading';
+import DoneLottie from '../components/DoneLottie';
+import PermissionWarning from '../components/PermissionWarning';
 
 type RouteProps = StackScreenProps<RootStackParamList, 'ImageEditor'>;
 
@@ -26,7 +31,21 @@ const ImageEditor: FC<Props> = ({route}): JSX.Element => {
 
   const {imageUri} = route.params || {};
   const [showConfirmModal, setConfirmModal] = useState<boolean>(false);
-  const [selectedImage, setSelectedImage] = useState<string>('');
+  const [selectedImage, setSelectedImage] = useState<string>(imageUri);
+  const [compressedImage, setCompressedImage] = useState<string>(imageUri);
+  const [fileSize, setFileSize] = useState<number>(0);
+  const [compressValue, setCompressValue] = useState<number>(1);
+  const [compressedPercentage, setCompressedPercentage] = useState<number>(100);
+  const [compressionStarts, setCompressionStarts] = useState<boolean>(false);
+  const [busy, setBusy] = useState<boolean>(false);
+  const [processFinished, setProcessFinished] = useState<boolean>(false);
+  const [permissionWarning, setPermissionWarning] = useState<boolean>(false);
+
+  const resetActivity = (): void => {
+    setCompressValue(1);
+    setCompressedPercentage(100);
+    setCompressedImage('');
+  };
 
   const displayConfirmModal = (): void => setConfirmModal(true);
   const hideConfirmModal = (): void => setConfirmModal(false);
@@ -38,6 +57,8 @@ const ImageEditor: FC<Props> = ({route}): JSX.Element => {
       return console.log('error', error);
     }
 
+    resetActivity();
+    getImageSize(path);
     setSelectedImage(path);
   };
 
@@ -48,6 +69,8 @@ const ImageEditor: FC<Props> = ({route}): JSX.Element => {
       return console.log('error', error);
     }
 
+    resetActivity();
+    getImageSize(path);
     setSelectedImage(path);
   };
 
@@ -60,13 +83,27 @@ const ImageEditor: FC<Props> = ({route}): JSX.Element => {
     displayConfirmModal();
   };
 
+  const getImageSize = async (imageUri: string): Promise<void> => {
+    const uri = imageUri.split('file:///')[1];
+    const size = await fsModule.getSize(uri);
+    setFileSize(convertSizeInKb(size));
+  };
+
   useEffect(() => {
     navigation.addListener('beforeRemove', preventBack);
+
     return () => {
       navigation.removeListener('beforeRemove', preventBack);
       canGoBack = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (imageUri && !selectedImage) {
+      setSelectedImage(imageUri);
+      getImageSize(imageUri);
+    }
+  }, [imageUri]);
 
   // Handling Back Press Manually
   const handleMoveToBackScreen = (): void => {
@@ -75,26 +112,99 @@ const ImageEditor: FC<Props> = ({route}): JSX.Element => {
     navigation.navigate('Home');
   };
 
+  const handleImageCompress = async (value: number): Promise<void> => {
+    if (!compressionStarts) {
+      return;
+    }
+
+    setBusy(true);
+    const compressPercent: number = Math.floor(value * 100);
+    const uri = selectedImage.split('file:///')[1];
+    const result = await fsModule.compressImage(uri, compressPercent);
+    console.log('result', result);
+    setBusy(false);
+
+    setFileSize(convertSizeInKb(result.size));
+    setCompressedImage('file:///' + result.uri);
+    setCompressedPercentage(Math.round(value * 100));
+  };
+
+  const updateCompressValue = (value: number): void => {
+    setCompressValue(value);
+  };
+
+  const handleImageSave = async (): Promise<void> => {
+    try {
+      const isGranted = await takeReadAndWritePermissions();
+
+      if (!isGranted) {
+        return setPermissionWarning(true);
+      }
+
+      const name = 'pp-' + Date.now();
+      const uri: string = compressedImage.split('file:///')[1];
+      const compressPercent: number = Math.floor(compressValue * 100);
+      const result = await fsModule.saveImageToDevice(
+        uri,
+        name,
+        compressPercent,
+      );
+
+      console.log('result', result);
+
+      if (result === 'Done') {
+        setProcessFinished(true);
+      }
+    } catch (error) {
+      console.log('handleImageSave() - error', error);
+    }
+  };
+
   return (
     <View style={styles.container}>
-      <ImageEditorHeader />
+      <ImageEditorHeader onSavePress={handleImageSave} />
       <BackgroundImageEditor />
 
       <View style={styles.imageContainer}>
-        <SelectedImage uri={selectedImage || imageUri} />
+        <SelectedImage uri={compressedImage || selectedImage}>
+          {(busy || processFinished) && (
+            <>
+              <BusyLoading visible={busy} />
+              <DoneLottie
+                visible={processFinished}
+                onFinish={() => setProcessFinished(false)}
+              />
+            </>
+          )}
+        </SelectedImage>
       </View>
 
       <EditorTools
+        fileSize={fileSize}
+        compressValue={compressValue}
+        compressedPercentage={compressedPercentage}
         onCaptureAnother={captureImageToCompress}
         onSelectAnother={selectImageToCompress}
+        onSliderChange={handleImageCompress}
+        onSlidingStart={() => setCompressionStarts(true)}
+        onSlidingComplete={updateCompressValue}
       />
 
       <ConfirmModal
         visible={showConfirmModal}
         title="Are you sure?"
         message="Are you sure because this action will discard all your changes."
-        onCancelPress={hideConfirmModal}
-        onDiscardPress={handleMoveToBackScreen}
+        primaryBtnTitle="Cancel"
+        dangerBtnTitle="Discard"
+        onPrimaryBtnPress={hideConfirmModal}
+        onDangerBtnPress={handleMoveToBackScreen}
+      />
+
+      <PermissionWarning
+        visible={permissionWarning}
+        title="Required File Write Permission"
+        message="This app needs the permission to save this file inside your device!"
+        onClose={() => setPermissionWarning(false)}
       />
     </View>
   );

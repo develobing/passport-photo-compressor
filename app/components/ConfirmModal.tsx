@@ -5,15 +5,19 @@ interface Props {
   visible?: boolean;
   title?: string;
   message?: string;
-  onCancelPress?: () => void;
-  onDiscardPress?: () => void;
+  primaryBtnTitle: string;
+  dangerBtnTitle: string;
+  onPrimaryBtnPress?: () => void;
+  onDangerBtnPress?: () => void;
 }
 const ConfirmModal: FC<Props> = ({
   visible,
   title,
   message,
-  onCancelPress,
-  onDiscardPress,
+  primaryBtnTitle,
+  dangerBtnTitle,
+  onPrimaryBtnPress,
+  onDangerBtnPress,
 }): JSX.Element => {
   return (
     <Modal visible={visible} transparent>
@@ -28,14 +32,14 @@ const ConfirmModal: FC<Props> = ({
           <View style={styles.btnContainer}>
             <Pressable
               style={[styles.commonBtnStyle, styles.cancel]}
-              onPress={onCancelPress}>
-              <Text>Cancel</Text>
+              onPress={onPrimaryBtnPress}>
+              <Text>{primaryBtnTitle}</Text>
             </Pressable>
 
             <Pressable
               style={[styles.commonBtnStyle, styles.discard]}
-              onPress={onDiscardPress}>
-              <Text style={styles.discardText}>Discard</Text>
+              onPress={onDangerBtnPress}>
+              <Text style={styles.discardText}>{dangerBtnTitle}</Text>
             </Pressable>
           </View>
         </View>
