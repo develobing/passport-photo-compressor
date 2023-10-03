@@ -1,4 +1,4 @@
-package com.pasportphotocompressor;
+package com.PassportPhotoCompressor;
 
 import com.facebook.react.ReactPackage;
 import com.facebook.react.bridge.NativeModule;

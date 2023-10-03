@@ -73,9 +73,9 @@ android {
 
     compileSdkVersion rootProject.ext.compileSdkVersion
 
-    namespace "com.pasportphotocompressor"
+    namespace "com.PassportPhotoCompressor"
     defaultConfig {
-        applicationId "com.pasportphotocompressor"
+        applicationId "com.PassportPhotoCompressor"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
